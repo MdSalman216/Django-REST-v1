@@ -1,38 +1,62 @@
 from django.db.models import fields
 from rest_framework import serializers, validators
-from watchlist_app.models import Movie
+from watchlist_app.models import Review, StreamPlatform, WatchList
 
 
 ################################################### ModelSerializer #####################################################
 # No need to define get, post and put explicityly
 # But validators must be defined explicitly
-class MovieSerializer(serializers.ModelSerializer):
-    len_name = serializers.SerializerMethodField()  # Create Custom Serializer field
+
+class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Movie
+        model = Review
+        fields = "__all__"
+
+
+
+class WatchListSerializer(serializers.ModelSerializer):
+    # len_name = serializers.SerializerMethodField()  # Create Custom Serializer field
+
+    # One movie can have many reviews
+    reviews = ReviewSerializer(many=True, read_only=True)
+    # variable name "reviews" must be same from Review model related_name
+
+    class Meta:
+        model = WatchList
         fields = "__all__"
         # fields = ["id","name","description"]
         # exclude = ["active"]
 
-    # Method for  Custom Serializer field
-    def get_len_name(self, object):
-        return len(object.name)
 
-    # Field Level Validators for "name" field
-    def validate_name(self, value):
-        if len(value) < 2:
-            raise serializers.ValidationError("Movie name is too short")
-        else:
-            return value
+class StreamPlatformSerializer(serializers.ModelSerializer):
+    watch = WatchListSerializer(many=True, read_only=True) # One Streaming Platform can have many watchlists
+    # name "watch" comes from model foreign key
+    
+    class Meta:
+        model = StreamPlatform
+        fields = "__all__"
 
-     # Object Level Validators
-    def validate(self, data):
-        if data['name'] == data['description']:
-            raise serializers.ValidationError(
-                "Movie name & description must not be same")
-        else:
-            return data
+
+
+    # # Method for  Custom Serializer field
+    # def get_len_name(self, object):
+    #     return len(object.name)
+
+    # # Field Level Validators for "name" field
+    # def validate_name(self, value):
+    #     if len(value) < 2:
+    #         raise serializers.ValidationError("Movie name is too short")
+    #     else:
+    #         return value
+
+    #  # Object Level Validators
+    # def validate(self, data):
+    #     if data['name'] == data['description']:
+    #         raise serializers.ValidationError(
+    #             "Movie name & description must not be same")
+    #     else:
+    #         return data
 
 
 ################################################### Serializers #########################################################
